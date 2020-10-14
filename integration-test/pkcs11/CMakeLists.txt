@@ -22,6 +22,7 @@ list(APPEND real_source_files
             ${sources}
             ${test_config_sources}
             "${CMAKE_SOURCE_DIR}/platform/posix/pkcs11_pal.c"
+            "${3rdparty_location}/mbedtls_utils/mbedtls_utils.c"
             )
 
 # list the directories the module under test includes
@@ -46,8 +47,6 @@ list(APPEND test_include_directories
 
 # =============================  (end edit)  ===================================
 set(real_name "${project_name}_real")
-#message("${real_source_files}")
-message("${real_include_directories}")
 
 create_real_library(${real_name}
                     "${real_source_files}"

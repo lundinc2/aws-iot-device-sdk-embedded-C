@@ -55,6 +55,7 @@
 #endif
 
 #include "logging_stack.h"
+#include "stddef.h"
 
 /**
  * @brief Malloc API used by iot_pkcs11.h

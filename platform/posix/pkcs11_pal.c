@@ -172,7 +172,6 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
 
         if( NULL == pxFile )
         {
-            ulStatus = GetLastError();
             LogError( ( "PKCS #11 PAL was unable to save object to file. "
                         "The PAL was unable to open a file with name %s in write mode.", pcFileName ) );
             xHandle = eInvalidHandle;
