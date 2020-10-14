@@ -168,7 +168,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
     if( pcFileName != NULL )
     {
         /* Overwrite the file every time it is saved. */
-        pxFile = fOpen( pcFileName, "w" );
+        pxFile = fopen( pcFileName, "w" );
 
         if( NULL == pxFile )
         {
@@ -270,11 +270,11 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
         }
         else
         {
-            fseek(f, 0, SEEK_END);
-            *pulDataSize = ftell(f);
-            fseek(f, 0, SEEK_SET);
+            fseek(pxFile, 0, SEEK_END);
+            *pulDataSize = ftell(pxFile);
+            fseek(pxFile, 0, SEEK_SET);
 
-            *ppucData = PCKS11_MALLOC( *pulDataSize );
+            *ppucData = PKCS11_MALLOC( *pulDataSize );
 
             if( NULL == *ppucData )
             {
@@ -299,7 +299,7 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
         }
     }
 
-    return ulReturn;
+    return xReturn;
 }
 
 /*-----------------------------------------------------------*/
