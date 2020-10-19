@@ -33,8 +33,8 @@
 
 /*-----------------------------------------------------------*/
 
-#include "iot_pkcs11_config.h"
-#include "iot_pkcs11.h"
+#include "core_pkcs11_config.h"
+#include "core_pkcs11.h"
 
 /* C runtime includes. */
 #include <string.h>
@@ -183,7 +183,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
            if( ulBytesWritten != ulDataSize )
            {
                 LogError( ( "PKCS #11 PAL was unable to save object to file. "
-                            "Expected to write %d bytes, but wrote %d bytes.", ulDataSize, ulBytesWritten ) );
+                            "Expected to write %u bytes, but wrote %lu bytes.", ulDataSize, ulBytesWritten ) );
                 xHandle = eInvalidHandle;
            }
         }
@@ -287,7 +287,8 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
             ulSize = fread(*ppucData, sizeof( uint8_t ), *pulDataSize, pxFile );
             if( ulSize != *pulDataSize )
             {
-                LogError(( "PKCS #11 PAL Failed to get object value. Expected to read %d from %s but received %d", *pulDataSize, pcFileName, ulSize ) );
+                LogError(( "PKCS #11 PAL Failed to get object value. Expected to read %d "
+                            "from %s but received %ld", *pulDataSize, pcFileName, ulSize ) );
                 xReturn = CKR_FUNCTION_FAILED;
             }
         }

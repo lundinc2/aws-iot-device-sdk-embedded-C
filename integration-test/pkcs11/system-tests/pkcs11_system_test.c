@@ -50,7 +50,6 @@
 
 /* Test includes. */
 #include "unity.h"
-#include "unity_fixtures.h"
 
 /* mbedTLS includes. */
 #include "mbedtls/sha256.h"
@@ -177,232 +176,47 @@ static CK_RV xDestroyProvidedObjects( CK_SESSION_HANDLE xSession,
                                CK_BYTE_PTR * ppxPkcsLabels,
                                CK_OBJECT_CLASS * xClass,
                                CK_ULONG ulCount );
+static CK_RV xDestroyDefaultCryptoObjects( CK_SESSION_HANDLE xSession );
 /*-----------------------------------------------------------*/
 
 /* ============================   UNITY FIXTURES ============================ */
+/* Called before each test method. */
+void setUp()
+{
+    CK_RV xResult;
 
+    xResult = C_GetFunctionList( &pxGlobalFunctionList );
+    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to get PKCS #11 function list." );
+
+    xResult = xInitializePKCS11();
+
+    if( xResult != CKR_CRYPTOKI_ALREADY_INITIALIZED)
+    {
+        TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module." );
+    }
+
+    xResult = xInitializePkcs11Session( &xGlobalSession );
+    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to open PKCS #11 session." );
+}
+
+/* Called after each test method. */
+void tearDown()
+{
+    CK_RV xResult;
+
+    xResult = pxGlobalFunctionList->C_CloseSession( xGlobalSession );
+    if( xResult != CKR_CRYPTOKI_NOT_INITIALIZED)
+    {
+        TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to close session." );
+
+        xResult = pxGlobalFunctionList->C_Finalize( NULL );
+        TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to finalize session." );
+    }
+}
 
 /* ========================== Test Cases ============================ */
 
 /* Delete well-known crypto objects from storage. */
-static CK_RV xDestroyDefaultCryptoObjects( CK_SESSION_HANDLE xSession );
-
-/* The StartFinish test group is for General Purpose,
- * Session, Slot, and Token management functions.
- * These tests do not require provisioning. */
-TEST_GROUP( Full_PKCS11_StartFinish );
-
-/* Tests for determing the capabilities of the PKCS #11 module. */
-TEST_GROUP( Full_PKCS11_Capabilities );
-
-/* The NoKey test group is for test of cryptographic functionality
- * that do not require keys.  Covers digesting and randomness.
- * These tests do not require provisioning. */
-TEST_GROUP( Full_PKCS11_NoObject );
-
-/* The RSA test group is for tests that require RSA keys. */
-TEST_GROUP( Full_PKCS11_RSA );
-
-/* The EC test group is for tests that require elliptic curve keys. */
-TEST_GROUP( Full_PKCS11_EC );
-
-TEST_SETUP( Full_PKCS11_StartFinish )
-{
-
-}
-
-TEST_TEAR_DOWN( Full_PKCS11_StartFinish )
-{
-}
-
-TEST_GROUP_RUNNER( Full_PKCS11_StartFinish )
-{
-    RUN_TEST_CASE( Full_PKCS11_StartFinish, AFQP_StartFinish_FirstTest );
-    RUN_TEST_CASE( Full_PKCS11_StartFinish, AFQP_InitializeFinalize );
-    RUN_TEST_CASE( Full_PKCS11_StartFinish, AFQP_GetSlotList );
-    RUN_TEST_CASE( Full_PKCS11_StartFinish, AFQP_OpenSessionCloseSession );
-
-    prvAfterRunningTests_NoObject();
-}
-
-TEST_SETUP( Full_PKCS11_Capabilities )
-{
-    CK_RV xResult;
-
-    xResult = xInitializePKCS11();
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module." );
-    xResult = xInitializePkcs11Session( &xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to open PKCS #11 session." );
-}
-
-TEST_TEAR_DOWN( Full_PKCS11_Capabilities )
-{
-    CK_RV xResult;
-
-    xResult = pxGlobalFunctionList->C_CloseSession( xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to close session." );
-    xResult = pxGlobalFunctionList->C_Finalize( NULL );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to finalize session." );
-}
-
-TEST_GROUP_RUNNER( Full_PKCS11_Capabilities )
-{
-    prvBeforeRunningTests();
-
-    RUN_TEST_CASE( Full_PKCS11_Capabilities, AFQP_Capabilities );
-
-    prvAfterRunningTests_NoObject();
-}
-
-TEST_SETUP( Full_PKCS11_NoObject )
-{
-    CK_RV xResult;
-
-    xResult = xInitializePKCS11();
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module." );
-    xResult = xInitializePkcs11Session( &xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to open PKCS #11 session." );
-}
-
-TEST_TEAR_DOWN( Full_PKCS11_NoObject )
-{
-    CK_RV xResult;
-
-    xResult = pxGlobalFunctionList->C_CloseSession( xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to close session." );
-    xResult = pxGlobalFunctionList->C_Finalize( NULL );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to finalize session." );
-}
-
-
-TEST_GROUP_RUNNER( Full_PKCS11_NoObject )
-{
-    prvBeforeRunningTests();
-
-    RUN_TEST_CASE( Full_PKCS11_NoObject, AFQP_Digest );
-    RUN_TEST_CASE( Full_PKCS11_NoObject, AFQP_Digest_ErrorConditions );
-    RUN_TEST_CASE( Full_PKCS11_NoObject, AFQP_GenerateRandom );
-
-    prvAfterRunningTests_NoObject();
-}
-
-TEST_SETUP( Full_PKCS11_RSA )
-{
-    CK_RV xResult;
-    xResult = xInitializePKCS11();
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module." );
-    xResult = xInitializePkcs11Session( &xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to open PKCS #11 session." );
-}
-
-
-TEST_TEAR_DOWN( Full_PKCS11_RSA )
-{
-    CK_RV xResult;
-
-    xResult = pxGlobalFunctionList->C_CloseSession( xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to close session." );
-
-    xResult = pxGlobalFunctionList->C_Finalize( NULL );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to finalize session." );
-}
-
-TEST_GROUP_RUNNER( Full_PKCS11_RSA )
-{
-    #if ( pkcs11testRSA_KEY_SUPPORT == 1 )
-        prvBeforeRunningTests();
-        #if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 1 )
-            RUN_TEST_CASE( Full_PKCS11_RSA, AFQP_CreateObject );
-        #endif
-
-        /* Generating RSA keys is not currently supported.
-         #if ( pkcs11testGENERATE_KEYPAIR_SUPPORT == 1 )
-         *   RUN_TEST_CASE( Full_PKCS11_RSA, AFQP_GenerateKeyPair );
-         #endif
-         */
-
-        RUN_TEST_CASE( Full_PKCS11_RSA, AFQP_FindObject );
-        RUN_TEST_CASE( Full_PKCS11_RSA, AFQP_GetAttributeValue );
-        RUN_TEST_CASE( Full_PKCS11_RSA, AFQP_Sign );
-
-        #if ( pkcs11testPREPROVISIONED_SUPPORT != 1 )
-            /* Always destroy objects last. */
-            RUN_TEST_CASE( Full_PKCS11_RSA, AFQP_DestroyObject );
-        #endif
-
-        #if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 1 )
-
-            /* This will re-import credentials if supported, it is expected that
-             * secure elements do not destroy the "real" credentials and the test
-             * suite will not try to re-provision a secure element if they are
-             * destroyed, so it is best to use a separate slot for throwaway test
-             * credentials.
-             */
-            prvAfterRunningTests_Object();
-        #endif
-    #endif /* if ( pkcs11testRSA_KEY_SUPPORT == 1 ) */
-}
-
-
-
-TEST_SETUP( Full_PKCS11_EC )
-{
-    CK_RV xResult;
-    xResult = xInitializePKCS11();
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module." );
-    xResult = xInitializePkcs11Session( &xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to open PKCS #11 session." );
-}
-
-TEST_TEAR_DOWN( Full_PKCS11_EC )
-{
-    CK_RV xResult;
-
-    xResult = pxGlobalFunctionList->C_CloseSession( xGlobalSession );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to close session." );
-
-    xResult = pxGlobalFunctionList->C_Finalize( NULL );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to finalize session." );
-}
-
-TEST_GROUP_RUNNER( Full_PKCS11_EC )
-{
-    #if ( pkcs11testEC_KEY_SUPPORT == 1 )
-        prvBeforeRunningTests();
-
-        #if ( pkcs11testGENERATE_KEYPAIR_SUPPORT == 1 )
-            RUN_TEST_CASE( Full_PKCS11_EC, AFQP_GenerateKeyPair );
-        #endif
-
-        /* Always run AFQP_CreateObject after AFQP_GenerateKeyPair if the port
-         * supports both. Ports that support object importing have extra checks
-         * as the contents of the private key and public key are well known.
-         */
-        #if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 1 )
-            RUN_TEST_CASE( Full_PKCS11_EC, AFQP_CreateObject );
-        #endif
-
-        RUN_TEST_CASE( Full_PKCS11_EC, AFQP_FindObject );
-        RUN_TEST_CASE( Full_PKCS11_EC, AFQP_GetAttributeValue );
-        RUN_TEST_CASE( Full_PKCS11_EC, AFQP_Sign );
-        RUN_TEST_CASE( Full_PKCS11_EC, AFQP_Verify );
-
-        #if ( pkcs11testPREPROVISIONED_SUPPORT != 1 )
-            RUN_TEST_CASE( Full_PKCS11_EC, AFQP_DestroyObject );
-        #endif
-
-        #if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 1 )
-
-            /* This will re-import credentials if supported, it is expected that
-             * secure elements do not destroy the "real" credentials and the test
-             * suite will not try to re-provision a secure element if they are
-             * destroyed, so it is best to use a separate slot for throwaway test
-             * credentials.
-             */
-            prvAfterRunningTests_Object();
-        #endif
-    #endif /* if ( pkcs11testEC_KEY_SUPPORT == 1 ) */
-}
 
 static CK_RV prvDestroyTestCredentials( void )
 {
@@ -455,67 +269,6 @@ static CK_RV prvDestroyTestCredentials( void )
     return xDestroyResult;
 }
 
-CK_RV prvBeforeRunningTests( void )
-{
-    CK_RV xResult;
-
-    /* Initialize the function list */
-    xResult = C_GetFunctionList( &pxGlobalFunctionList );
-
-    if( xResult == CKR_OK )
-    {
-        /* Close the last session if it was not closed already. */
-        pxGlobalFunctionList->C_Finalize( NULL );
-    }
-
-    return xResult;
-}
-
-/* If no changes to PKCS #11 objects have been made during the test,
- *  just make sure that the PKCS #11 module is initialized and in a good state.
- */
-void prvAfterRunningTests_NoObject( void )
-{
-    xInitializePKCS11();
-}
-
-/* If these tests may have manipulated the PKCS #11 objects
- * (private key, public keys and/or certificates), run this routine afterwards
- * to make sure that credentials are in a good state for the other test groups. */
-void prvAfterRunningTests_Object( void )
-{
-    /* Check if the test label is the same as the run-time label. */
-
-    /* Only reprovision a device that supports importing private keys. */
-    #if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 1 )
-
-        /* If labels are the same, then we are assuming that this device does not
-         * have a secure element. */
-        if( ( 0 == strcmp( pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS, pkcs11testLABEL_DEVICE_PRIVATE_KEY_FOR_TLS ) ) &&
-            ( 0 == strcmp( pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS, pkcs11testLABEL_DEVICE_CERTIFICATE_FOR_TLS ) ) )
-        {
-            /* Delete the old device private key and certificate, if that
-             * operation is supported by this port. Replace
-             * them with known-good AWS IoT credentials. */
-            xDestroyDefaultCryptoObjects( xGlobalSession );
-
-            /* Re-provision the device with default certs
-             * so that subsequent tests are not changed. */
-            //vDevModeKeyProvisioning();
-            xCurrentCredentials = eClientCredential;
-        }
-        else
-        {
-            /* If the labels are different, then test credentials
-             * and application credentials are stored in separate
-             * slots which were not modified, so nothing special
-             * needs to be done. */
-        }
-    #endif /* if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 1 ) */
-}
-
-
-
 /* Assumes that device is already provisioned at time of calling. */
 static void prvFindObjectTest( CK_OBJECT_HANDLE_PTR pxPrivateKeyHandle,
                                CK_OBJECT_HANDLE_PTR pxCertificateHandle,
@@ -559,24 +312,6 @@ static void prvFindObjectTest( CK_OBJECT_HANDLE_PTR pxPrivateKeyHandle,
 }
 
 
-TEST( Full_PKCS11_StartFinish, AFQP_StartFinish_FirstTest )
-{
-    CK_RV xResult;
-
-    /* Finalize the PKCS #11 module to get it in a known state.
-     * Set up the PKCS #11 function list pointer. */
-    xResult = prvBeforeRunningTests();
-
-    /* prvBeforeRunningTests finalizes the PKCS #11 modules so that tests will start
-     * in a known state.  It is OK if the module was not previously initialized. */
-    if( xResult == CKR_CRYPTOKI_NOT_INITIALIZED )
-    {
-        xResult = CKR_OK;
-    }
-
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Setup for the PKCS #11 routine failed.  Test module will start in an unknown state." );
-}
-
 /*-----------------------------------------------------------*/
 
 void test_Get_Function_List( void )
@@ -591,7 +326,7 @@ void test_Get_Function_List( void )
     TEST_ASSERT_NOT_EQUAL( NULL, pxFunctionList );
 }
 
-TEST( Full_PKCS11_StartFinish, AFQP_InitializeFinalize )
+void test_Initialize_Finalize( void )
 {
     CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
     CK_RV xResult;
@@ -599,6 +334,9 @@ TEST( Full_PKCS11_StartFinish, AFQP_InitializeFinalize )
     xResult = C_GetFunctionList( &pxFunctionList );
     TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to get function list." );
     TEST_ASSERT_NOT_EQUAL_MESSAGE( NULL, pxFunctionList, "Invalid function list pointer." );
+
+    /* Set up will initialize, get it back to a known state. */
+    xResult = pxFunctionList->C_Finalize( NULL );
 
     xResult = xInitializePKCS11();
     TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module." );
@@ -618,21 +356,14 @@ TEST( Full_PKCS11_StartFinish, AFQP_InitializeFinalize )
     xResult = pxFunctionList->C_Finalize( NULL );
     TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Finalize failed" );
 
-    /* Call Finalize a second time.  Since finalize may be called multiple times,
-     * it is important that the PKCS #11 module is tolerant of multiple calls. */
-    xResult = pxFunctionList->C_Finalize( NULL );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_CRYPTOKI_NOT_INITIALIZED, xResult, "Second PKCS #11 finalization failed" );
 }
 
-TEST( Full_PKCS11_StartFinish, AFQP_GetSlotList )
+void test_GetSlotList( void )
 {
     CK_RV xResult;
     CK_SLOT_ID * pxSlotId = NULL;
     CK_ULONG xSlotCount = 0;
     CK_ULONG xExtraSlotCount = 0;
-
-    xResult = xInitializePKCS11();
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module" );
 
     if( TEST_PROTECT() )
     {
@@ -678,7 +409,7 @@ TEST( Full_PKCS11_StartFinish, AFQP_GetSlotList )
     TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Finalize failed" );
 }
 
-TEST( Full_PKCS11_StartFinish, AFQP_OpenSessionCloseSession )
+void test_OpenSession_CloseSession( void )
 {
     CK_SLOT_ID_PTR pxSlotId = NULL;
     CK_SLOT_ID xSlotId = 0;
@@ -687,18 +418,15 @@ TEST( Full_PKCS11_StartFinish, AFQP_OpenSessionCloseSession )
     CK_BBOOL xSessionOpen = CK_FALSE;
     CK_RV xResult = CKR_OK;
 
-    xResult = xInitializePKCS11();
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to initialize PKCS #11 module" );
-
     if( TEST_PROTECT() )
     {
         xResult = xGetSlotList( &pxSlotId,
                                 &xSlotCount );
         TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to get slot list" );
+
         xSlotId = pxSlotId[ pkcs11testSLOT_NUMBER ];
         PKCS11_FREE( pxSlotId ); /* xGetSlotList allocates memory. */
         TEST_ASSERT_GREATER_THAN( 0, xSlotCount );
-
 
         xResult = pxGlobalFunctionList->C_OpenSession( xSlotId,
                                                        CKF_SERIAL_SESSION, /* This flag is mandatory for PKCS #11 legacy reasons. */
@@ -729,127 +457,6 @@ TEST( Full_PKCS11_StartFinish, AFQP_OpenSessionCloseSession )
     TEST_ASSERT_EQUAL_MESSAGE( CKR_CRYPTOKI_NOT_INITIALIZED, xResult, "Negative Test: Opened a session before initializing module." );
 }
 
-/*--------------------------------------------------------*/
-/*-------------- Capabilities Tests --------------------- */
-/*--------------------------------------------------------*/
-
-TEST( Full_PKCS11_Capabilities, AFQP_Capabilities )
-{
-    CK_RV xResult = 0;
-    CK_ULONG xSlotCount = 0;
-    CK_SLOT_ID_PTR pxSlotId = NULL;
-    CK_MECHANISM_INFO MechanismInfo = { 0 };
-    CK_BBOOL xSupportsKeyGen = CK_FALSE;
-
-    /* Determine the number of slots. */
-    xResult = pxGlobalFunctionList->C_GetSlotList( CK_TRUE, NULL, &xSlotCount );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to get slot count" );
-
-    /* Allocate memory to receive the list of slots, plus one extra. */
-    pxSlotId = PKCS11_MALLOC( sizeof( CK_SLOT_ID ) * xSlotCount );
-    TEST_ASSERT_NOT_EQUAL_MESSAGE( NULL, pxSlotId, "Failed malloc memory for slot list" );
-
-    /* Call C_GetSlotList again to receive all slots with tokens present. */
-    xResult = pxGlobalFunctionList->C_GetSlotList( CK_TRUE, pxSlotId, &xSlotCount );
-    TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to get slot count" );
-
-    /* Check for RSA PKCS #1 signing support. */
-    xResult = pxGlobalFunctionList->C_GetMechanismInfo( pxSlotId[ 0 ], CKM_RSA_PKCS, &MechanismInfo );
-    TEST_ASSERT_TRUE( CKR_OK == xResult || CKR_MECHANISM_INVALID == xResult );
-
-    if( CKR_OK == xResult )
-    {
-        TEST_ASSERT_TRUE( 0 != ( CKF_SIGN & MechanismInfo.flags ) );
-
-        TEST_ASSERT_TRUE( MechanismInfo.ulMaxKeySize >= pkcs11RSA_2048_MODULUS_BITS &&
-                          MechanismInfo.ulMinKeySize <= pkcs11RSA_2048_MODULUS_BITS );
-
-        /* Check for pre-padded signature verification support. This is required
-         * for round-trip testing. */
-        xResult = pxGlobalFunctionList->C_GetMechanismInfo( pxSlotId[ 0 ], CKM_RSA_X_509, &MechanismInfo );
-        TEST_ASSERT_TRUE( CKR_OK == xResult );
-
-        TEST_ASSERT_TRUE( 0 != ( CKF_VERIFY & MechanismInfo.flags ) );
-
-        TEST_ASSERT_TRUE( MechanismInfo.ulMaxKeySize >= pkcs11RSA_2048_MODULUS_BITS &&
-                          MechanismInfo.ulMinKeySize <= pkcs11RSA_2048_MODULUS_BITS );
-
-        /* Check consistency with static configuration. */
-        #if ( 0 == pkcs11testRSA_KEY_SUPPORT )
-            TEST_FAIL_MESSAGE( "Static and runtime configuration for key generation support are inconsistent." );
-        #endif
-
-        LogInfo( ( "The PKCS #11 module supports RSA signing." ) );
-    }
-
-    /* Check for ECDSA support, if applicable. */
-    xResult = pxGlobalFunctionList->C_GetMechanismInfo( pxSlotId[ 0 ], CKM_ECDSA, &MechanismInfo );
-    TEST_ASSERT_TRUE( CKR_OK == xResult || CKR_MECHANISM_INVALID == xResult );
-
-    if( CKR_OK == xResult )
-    {
-        TEST_ASSERT_TRUE( 0 != ( ( CKF_SIGN | CKF_VERIFY ) & MechanismInfo.flags ) );
-
-        TEST_ASSERT_TRUE( MechanismInfo.ulMaxKeySize >= pkcs11ECDSA_P256_KEY_BITS &&
-                          MechanismInfo.ulMinKeySize <= pkcs11ECDSA_P256_KEY_BITS );
-
-        /* Check consistency with static configuration. */
-        #if ( 0 == pkcs11testEC_KEY_SUPPORT )
-            TEST_FAIL_MESSAGE( "Static and runtime configuration for key generation support are inconsistent." );
-        #endif
-
-        LogInfo( ( "The PKCS #11 module supports ECDSA." ) );
-    }
-
-    #if ( pkcs11testPREPROVISIONED_SUPPORT != 1 )
-        /* Check for elliptic-curve key generation support. */
-        xResult = pxGlobalFunctionList->C_GetMechanismInfo( pxSlotId[ 0 ], CKM_EC_KEY_PAIR_GEN, &MechanismInfo );
-        TEST_ASSERT_TRUE( CKR_OK == xResult || CKR_MECHANISM_INVALID == xResult );
-
-        if( CKR_OK == xResult )
-        {
-            TEST_ASSERT_TRUE( 0 != ( CKF_GENERATE_KEY_PAIR & MechanismInfo.flags ) );
-
-            TEST_ASSERT_TRUE( MechanismInfo.ulMaxKeySize >= pkcs11ECDSA_P256_KEY_BITS &&
-                              MechanismInfo.ulMinKeySize <= pkcs11ECDSA_P256_KEY_BITS );
-
-            xSupportsKeyGen = CK_TRUE;
-            LogInfo( ( "The PKCS #11 module supports elliptic-curve key generation." ) );
-        }
-
-        /* Check for consistency between static configuration and runtime key
-         * generation settings. */
-        if( CK_TRUE == xSupportsKeyGen )
-        {
-            #if ( 0 == pkcs11testGENERATE_KEYPAIR_SUPPORT )
-                TEST_FAIL_MESSAGE( "Static and runtime configuration for key generation support are inconsistent." );
-            #endif
-        }
-        else
-        {
-            #if ( 1 == pkcs11testGENERATE_KEYPAIR_SUPPORT )
-                TEST_FAIL_MESSAGE( "Static and runtime configuration for key generation support are inconsistent." );
-            #endif
-        }
-    #endif /* if ( pkcs11testPREPROVISIONED_SUPPORT != 1 ) */
-
-    /* SHA-256 support is required. */
-    xResult = pxGlobalFunctionList->C_GetMechanismInfo( pxSlotId[ 0 ], CKM_SHA256, &MechanismInfo );
-    TEST_ASSERT_TRUE( CKR_OK == xResult );
-    TEST_ASSERT_TRUE( 0 != ( CKF_DIGEST & MechanismInfo.flags ) );
-
-    PKCS11_FREE( pxSlotId );
-
-    /* Report on static configuration for key import support. */
-    #if ( 1 == pkcs11testIMPORT_PRIVATE_KEY_SUPPORT )
-        LogInfo( ( "The PKCS #11 module supports private key import." ) );
-    #endif
-}
-
-/*--------------------------------------------------------*/
-/*-------------- No Object Tests ------------------------ */
-/*--------------------------------------------------------*/
-
 static CK_BYTE x896BitInput[] = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu";
 
 static CK_BYTE xSha256HashOf896BitInput[] =
@@ -858,7 +465,7 @@ static CK_BYTE xSha256HashOf896BitInput[] =
     0x0b, 0x24, 0x9b, 0x11, 0xe8, 0xf0, 0x7a, 0x51, 0xaf, 0xac, 0x45, 0x03, 0x7a, 0xfe, 0xe9, 0xd1
 };
 
-TEST( Full_PKCS11_NoObject, AFQP_Digest )
+void test_Digest( void )
 {
     CK_RV xResult = 0;
 
@@ -888,7 +495,7 @@ TEST( Full_PKCS11_NoObject, AFQP_Digest )
     TEST_ASSERT_EQUAL_INT8_ARRAY( xSha256HashOf896BitInput, xDigestResult, pkcs11SHA256_DIGEST_LENGTH );
 }
 
-TEST( Full_PKCS11_NoObject, AFQP_Digest_ErrorConditions )
+void test_Digest_ErrorConditions( void )
 {
     CK_RV xResult = 0;
     CK_MECHANISM xDigestMechanism;
@@ -948,8 +555,7 @@ TEST( Full_PKCS11_NoObject, AFQP_Digest_ErrorConditions )
     TEST_ASSERT_EQUAL( CKR_OPERATION_NOT_INITIALIZED, xResult );
 }
 
-
-TEST( Full_PKCS11_NoObject, AFQP_GenerateRandom )
+void test_GenerateRandom( void )
 {
     CK_RV xResult = 0;
     uint32_t xSameSession = 0;
@@ -1081,11 +687,6 @@ static const char cValidRSACertificate[] =
     "5GC4F+8LFLzRrZJWs18FMLaCE+zJChw/oeSt+RS0JZDFn+uX9Q==\n"
     "-----END CERTIFICATE-----\n";
 
-void resetCredentials()
-{
-    xCurrentCredentials = eStateUnknown;
-}
-
 void prvProvisionRsaTestCredentials( CK_OBJECT_HANDLE_PTR pxPrivateKeyHandle,
                                      CK_OBJECT_HANDLE_PTR pxCertificateHandle )
 {
@@ -1130,7 +731,7 @@ void prvProvisionRsaTestCredentials( CK_OBJECT_HANDLE_PTR pxPrivateKeyHandle,
     }
 }
 
-TEST( Full_PKCS11_RSA, AFQP_CreateObject )
+void test_CreateObject_RSA( void )
 {
     CK_RV xResult;
     CK_OBJECT_HANDLE xPrivateKeyHandle = CK_INVALID_HANDLE;
@@ -1146,7 +747,7 @@ TEST( Full_PKCS11_RSA, AFQP_CreateObject )
     prvProvisionRsaTestCredentials( &xPrivateKeyHandle, &xCertificateHandle );
 }
 
-TEST( Full_PKCS11_RSA, AFQP_FindObject )
+void test_FindObject_RSA( void )
 {
     CK_OBJECT_HANDLE xPrivateKeyHandle = CK_INVALID_HANDLE;
     CK_OBJECT_HANDLE xCertificateHandle = CK_INVALID_HANDLE;
@@ -1155,7 +756,7 @@ TEST( Full_PKCS11_RSA, AFQP_FindObject )
     prvFindObjectTest( &xPrivateKeyHandle, &xCertificateHandle, &xPublicKeyHandle );
 }
 
-TEST( Full_PKCS11_RSA, AFQP_GetAttributeValue )
+void test_GetAttributeValue_RSA( void )
 {
 #define MODULUS_LENGTH              256
 #define PUB_EXP_LENGTH              3
@@ -1201,7 +802,7 @@ TEST( Full_PKCS11_RSA, AFQP_GetAttributeValue )
 }
 
 
-TEST( Full_PKCS11_RSA, AFQP_Sign )
+void test_Sign_RSA( void )
 {
     CK_RV xResult;
     CK_OBJECT_HANDLE xPrivateKeyHandle;
@@ -1262,7 +863,7 @@ extern int PKI_RSA_RSASSA_PKCS1_v15_Encode( const unsigned char * hash,
                                             size_t dst_len,
                                             unsigned char * dst );
 
-TEST( Full_PKCS11_RSA, AFQP_GenerateKeyPair )
+void test_GenerateKeyPair( void )
 {
     CK_RV xResult;
     CK_OBJECT_HANDLE xPrivateKeyHandle;
@@ -1345,7 +946,7 @@ TEST( Full_PKCS11_RSA, AFQP_GenerateKeyPair )
     mbedtls_rsa_free( &xRsaContext );
 }
 
-TEST( Full_PKCS11_RSA, AFQP_DestroyObject )
+void test_DestroyObject_RSA( void )
 {
     CK_RV xResult = CKR_OK;
 
@@ -1513,7 +1114,7 @@ void prvProvisionEcTestCredentials( CK_OBJECT_HANDLE_PTR pxPrivateKeyHandle,
     #endif
 }
 
-TEST( Full_PKCS11_EC, AFQP_DestroyObject )
+void test_DestoryObject_EC( void )
 {
     CK_RV xResult;
 
@@ -1523,7 +1124,7 @@ TEST( Full_PKCS11_EC, AFQP_DestroyObject )
                                "Failed to destroy credentials in test setup." );
 }
 
-TEST( Full_PKCS11_EC, AFQP_CreateObject )
+void test_CreateObject_EC( void )
 {
     CK_OBJECT_HANDLE xPrivateKeyHandle;
     CK_OBJECT_HANDLE xCertificateHandle;
@@ -1571,7 +1172,7 @@ TEST( Full_PKCS11_EC, AFQP_CreateObject )
     #endif /* if ( pkcs11configJITP_CODEVERIFY_ROOT_CERT_SUPPORTED == 1 ) */
 }
 
-TEST( Full_PKCS11_EC, AFQP_Sign )
+void test_Sign_EC( void )
 {
     CK_RV xResult = CKR_OK;
     CK_OBJECT_HANDLE xPrivateKeyHandle = CK_INVALID_HANDLE;
@@ -1618,6 +1219,7 @@ TEST( Full_PKCS11_EC, AFQP_Sign )
     /* Reconstruct public key from EC Params. */
     mbedtls_ecp_keypair * pxKeyPair;
     pxKeyPair = PKCS11_MALLOC( sizeof( mbedtls_ecp_keypair ) );
+    TEST_ASSERT_NOT_EQUAL_MESSAGE( NULL, pxKeyPair, "Failed to allocate memory for the mbed TLS context." );
 
     /* Initialize the info. */
     pxEcdsaContext->pk_info = &mbedtls_eckey_info;
@@ -1687,7 +1289,7 @@ TEST( Full_PKCS11_EC, AFQP_Sign )
  * 6. Verifies the signature using the public key just created.
  * 7. Finds the public and private key using FindObject calls
  */
-TEST( Full_PKCS11_EC, AFQP_GenerateKeyPair )
+void test_GenerateKeyPair_EC( void )
 {
     CK_RV xResult;
     CK_OBJECT_HANDLE xPrivateKeyHandle = CK_INVALID_HANDLE;
@@ -1782,7 +1384,7 @@ TEST( Full_PKCS11_EC, AFQP_GenerateKeyPair )
     TEST_ASSERT_EQUAL_MESSAGE( CKR_OK, xResult, "Failed to retrieve EC Point." );
 }
 
-TEST( Full_PKCS11_EC, AFQP_Verify )
+void test_Verify_EC( void )
 {
     CK_RV xResult;
     CK_OBJECT_HANDLE xPrivateKeyHandle;
@@ -1861,7 +1463,7 @@ TEST( Full_PKCS11_EC, AFQP_Verify )
     /* Modify signature value and make sure verification fails. */
 }
 
-TEST( Full_PKCS11_EC, AFQP_FindObject )
+void test_FindObject_EC( void )
 {
     CK_OBJECT_HANDLE xPrivateKeyHandle = CK_INVALID_HANDLE;
     CK_OBJECT_HANDLE xCertificateHandle = CK_INVALID_HANDLE;
@@ -1875,7 +1477,7 @@ extern int convert_pem_to_der( const unsigned char * pucInput,
                                unsigned char * pucOutput,
                                size_t * pxOlen );
 
-TEST( Full_PKCS11_EC, AFQP_GetAttributeValue )
+void test_GetAttributeValue_EC( void )
 {
     CK_RV xResult;
     CK_OBJECT_HANDLE xPrivateKey = CK_INVALID_HANDLE;
