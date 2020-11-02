@@ -101,7 +101,7 @@ static CK_RV prvFileExists( const char * pcFileName )
  *
  */
 static void prvLabelToFilenameHandle( CK_BYTE_PTR pcLabel,
-                               const char ** pcFileName,
+                                char ** pcFileName,
                                CK_OBJECT_HANDLE_PTR pHandle )
 {
     if( pcLabel != NULL )
@@ -279,6 +279,7 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
 
             if( ulSize > 0UL )
             {
+                *pulDataSize = ulSize;
                 *ppucData = PKCS11_MALLOC( *pulDataSize );
                 if( NULL == *ppucData )
                 {
@@ -293,6 +294,7 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
 
         if( CKR_OK == xReturn )
         {
+            ulSize = 0;
             ulSize = fread( *ppucData, sizeof( uint8_t ), *pulDataSize, pxFile );
 
             if( ulSize != *pulDataSize )
