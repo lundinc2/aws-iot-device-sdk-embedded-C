@@ -28,25 +28,14 @@
 #include <string.h>
 
 /* PKCS includes. */
-#include "iot_pki_utils.h"
-#include "iot_pkcs11_config.h"
-#include "iot_pkcs11.h"
-#include "iot_test_pkcs11_config.h"
+#include "core_pki_utils.h"
+#include "core_pkcs11_config.h"
+#include "core_pkcs11.h"
+#include "core_test_pkcs11_config.h"
 
 /* Loggign includes. */
 #include "logging_levels.h"
 #include "logging_stack.h"
-
-#if ( pkcs11testRSA_KEY_SUPPORT == 0 ) && ( pkcs11testEC_KEY_SUPPORT == 0 )
-    #error "RSA or Elliptic curve keys (or both) must be supported."
-#endif
-
-#if ( pkcs11testIMPORT_PRIVATE_KEY_SUPPORT == 0 ) && ( pkcs11testGENERATE_KEYPAIR_SUPPORT == 0 ) && ( pkcs11testPREPROVISIONED_SUPPORT == 0 )
-    #error "The device must have some mechanism configured to provision the PKCS #11 stack."
-#endif
-
-#include "pkcs11_test_globals.h"
-#include "iot_pkcs11_config.h"
 
 /* Test includes. */
 #include "unity.h"
@@ -60,18 +49,6 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy_poll.h"
 #include "mbedtls/x509_crt.h"
-
-typedef enum
-{
-    eNone,                /* Device is not provisioned.  All credentials have been destroyed. */
-    eRsaTest,             /* Provisioned using the RSA test credentials located in this file. */
-    eEllipticCurveTest,   /* Provisioned using EC test credentials located in this file. */
-    eClientCredential,    /* Provisioned using the credentials in aws_clientcredential_keys. */
-    eGeneratedEc,         /* Provisioned using elliptic curve generated on device.  Private key unknown.  No corresponding certificate. */
-    eGeneratedRsa,
-    eDeliberatelyInvalid, /* Provisioned using credentials that are meant to trigger an error condition. */
-    eStateUnknown         /* State of the credentials is unknown. */
-} CredentialsProvisioned_t;
 
 /* Length parameters for importing RSA-2048 private keys. */
 #define MODULUS_LENGTH        pkcs11RSA_2048_MODULUS_BITS / 8
@@ -95,7 +72,6 @@ typedef struct RsaParams_t
     CK_BYTE exponent2[ EXPONENT_2_LENGTH + 1 ];
     CK_BYTE coefficient[ COEFFICIENT_LENGTH + 1 ];
 } RsaParams_t;
-
 
 /* PKCS #11 Globals.
  * These are used to reduce setup and tear down calls, and to

@@ -31,32 +31,7 @@
 #ifndef _IOT_TEST_PKCS11_CONFIG_H_
 #define _IOT_TEST_PKCS11_CONFIG_H_
 
-#include "iot_pkcs11_config.h"
-
-/**
- * @brief Number of simultaneous tasks for multithreaded tests.
- *
- * Each task consumes both stack and heap space, which may cause memory allocation
- * failures if too many tasks are created.
- */
-#define pkcs11testMULTI_THREAD_TASK_COUNT     ( 4 )
-
-/**
- * @brief The number of iterations of the test that will run in multithread tests.
- *
- * A single iteration of Signing and Verifying may take up to a minute on some
- * boards. Ensure that pkcs11testEVENT_GROUP_TIMEOUT is long enough to accommodate
- * all iterations of the loop.
- */
-#define pkcs11testMULTI_THREAD_LOOP_COUNT     ( 50 )
-
-/**
- * @brief
- *
- * All tasks of the SignVerifyRoundTrip_MultitaskLoop test must finish within
- * this timeout, or the test will fail.
- */
-#define pkcs11testEVENT_GROUP_TIMEOUT_MS      ( pdMS_TO_TICKS( 500000UL ) )
+#include "core_pkcs11_config.h"
 
 /**
  * @brief The index of the slot that should be used to open sessions for PKCS #11 tests.
