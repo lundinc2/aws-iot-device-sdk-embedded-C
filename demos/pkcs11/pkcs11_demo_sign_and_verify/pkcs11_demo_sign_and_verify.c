@@ -24,13 +24,29 @@
  */
 /* Standard include. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
+
+#include "logging_levels.h"
+
+#define LIBRARY_LOG_LEVEL    LOG_INFO
 
 /* PKCS #11 includes. */
 #include "core_pkcs11_config.h"
 #include "core_pkcs11.h"
 #include "pkcs11.h"
 #include "core_pki_utils.h"
+
+/* Logging configuration for the PKCS #11 library. */
+#ifndef LIBRARY_LOG_NAME
+    #define LIBRARY_LOG_NAME    "PKCS11_DEMO"
+#endif
+
+#ifndef LIBRARY_LOG_LEVEL
+    #define LIBRARY_LOG_LEVEL    LOG_INFO
+#endif
+
+#include "logging_stack.h"
 
 /* Demo includes. */
 #include "demo_helpers.h"
@@ -60,7 +76,7 @@ void vPKCS11SignVerifyDemo( void )
      * https://en.wikipedia.org/wiki/Transport_Layer_Security
      * https://en.wikipedia.org/wiki/Digital_signature
      */
-    LogInfo( ( "\r\nStarting PKCS #11 Sign and Verify Demo.\r\n" ) );
+    LogInfo( ( "Starting PKCS #11 Sign and Verify Demo." ) );
 
     /* Helper / previously explained variables. */
     CK_RV xResult = CKR_OK;
@@ -73,6 +89,8 @@ void vPKCS11SignVerifyDemo( void )
     CK_FUNCTION_LIST_PTR pxFunctionList = NULL;
     CK_BYTE * pxDerPublicKey = NULL;
     CK_ULONG ulDerPublicKeyLength = 0;
+    CK_BYTE xSignatureFormatBuffer[ pkcs11SHA256_DIGEST_LENGTH  * 2 ] = { 0 };
+    CK_BYTE_PTR pcFormatPtr = NULL;
 
     /* Digest variables. See "mechanisms_and_digests" for an explanation. */
     CK_BYTE pxKnownMessage[] = { "Hello world" };
@@ -201,7 +219,7 @@ void vPKCS11SignVerifyDemo( void )
 
     /********************************* Sign **********************************/
 
-    LogInfo( ( "Signing known message:\r\n %s\r\n", 
+    LogInfo( ( "Signing known message: %s", 
                 ( char * ) pxKnownMessage ) );
 
     /* Initializes the sign operation and sets what mechanism will be used
@@ -256,12 +274,12 @@ void vPKCS11SignVerifyDemo( void )
     if( xResult == CKR_OK )
     {
         LogInfo( ( "The signature of the digest was verified with the" \
-                    " public key and can be trusted.\r\n" ) );
+                    " public key and can be trusted." ) );
     }
     else
     {
         LogInfo( ( "Unable to verify the signature with the given public" \
-                    " key, the message cannot be trusted.\r\n" ) );
+                    " key, the message cannot be trusted." ) );
     }
 
     /* Export public key as hex bytes and print the hex representation of the
@@ -299,7 +317,7 @@ void vPKCS11SignVerifyDemo( void )
      * and make it necessary to redo these steps!
      *
      */
-    LogInfo( ( "Verifying with public key.\r\n" ) );
+    LogInfo( ( "Verifying with public key." ) );
     vExportPublicKey( hSession,
                       xPublicKeyHandle,
                       &pxDerPublicKey,
@@ -352,14 +370,14 @@ void vPKCS11SignVerifyDemo( void )
      * This command should output "Verified OK" and we then know we can trust 
      * the sender of the message!
      */
-    LogInfo( ( "Created signature: \r\n" ) );
-    for( ulIndex = 0; ulIndex < xSignatureLength; ulIndex++ )
+    pcFormatPtr = &xSignatureFormatBuffer[ 0 ];
+    for( ulIndex = 0; ulIndex < ulDigestLength; ulIndex++ )
     {
-        LogInfo( ( "%02x", xSignature[ ulIndex ] ) );
+        pcFormatPtr += sprintf(pcFormatPtr, "%x", xSignature[ ulIndex ]);
     }
-    LogInfo( ( "\r\n" ) );
 
-    LogInfo( ( "Finished PKCS #11 Sign and Verify Demo.\r\n" ) );
+    LogInfo( ( "Created signature: %s", xSignatureFormatBuffer ) );
+    LogInfo( ( "Finished PKCS #11 Sign and Verify Demo." ) );
 }
 
 /**

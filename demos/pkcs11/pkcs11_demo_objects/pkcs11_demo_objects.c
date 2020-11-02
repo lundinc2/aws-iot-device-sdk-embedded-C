@@ -25,7 +25,17 @@
 
 /* Standard include. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
+
+/* Logging configuration for the PKCS #11 library. */
+#ifndef LIBRARY_LOG_NAME
+    #define LIBRARY_LOG_NAME    "PKCS11_DEMO"
+#endif
+
+#ifndef LIBRARY_LOG_LEVEL
+    #define LIBRARY_LOG_LEVEL    LOG_INFO
+#endif
 
 /* PKCS #11 includes. */
 #include "core_pkcs11_config.h"
@@ -119,20 +129,20 @@ static void prvObjectGeneration( void );
  */
 void vPKCS11ObjectDemo( void )
 {
-    LogInfo( ( "\r\nStarting PKCS #11 Objects Demo.\r\n" ) );
+    LogInfo( ( "Starting PKCS #11 Objects Demo." ) );
 
     /* PKCS #11 defines objects as "An item that is stored on a token. May be
      * data, a certificate, or a key." This demo will show how to create objects
      * that are managed by Cryptoki. */
     prvObjectImporting();
     prvObjectGeneration();
-    LogInfo( ( "\r\nFinished PKCS #11 Objects Demo.\r\n" ) );
+    LogInfo( ( "Finished PKCS #11 Objects Demo." ) );
 }
 
 static void prvObjectImporting( void )
 {
-    LogInfo( ( "---------Importing Objects---------\r\n" ) );
-    LogInfo( ( "Importing RSA Certificate...\r\n" ) );
+    LogInfo( ( "---------Importing Objects---------" ) );
+    LogInfo( ( "Importing RSA Certificate..." ) );
 
     /* Helper variables and variables that have been covered. */
     CK_RV xResult = CKR_OK;
@@ -214,7 +224,7 @@ static void prvObjectImporting( void )
     /* Convert the certificate to DER format if it was in PEM. The DER key
      * should be about 3/4 the size of the PEM key, so mallocing the PEM key
      * size is sufficient. */
-    pucDerObject = PKCS11_MALLOC( xCertificateTemplate.xValue.ulValueLen );
+    pucDerObject = malloc( xCertificateTemplate.xValue.ulValueLen );
     assert( pucDerObject != NULL );
 
     xDerLen = xCertificateTemplate.xValue.ulValueLen;
@@ -230,7 +240,7 @@ static void prvObjectImporting( void )
     xCertificateTemplate.xValue.ulValueLen = xDerLen;
 
     /* Create an object using the encoded client certificate. */
-    LogInfo( ( "Creating x509 certificate with label: %s \r\n",
+    LogInfo( ( "Creating x509 certificate with label: %s ",
                 pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS ) );
 
     /* Once the Cryptoki library has finished importing the new x509 certificate
@@ -258,18 +268,18 @@ static void prvObjectImporting( void )
     assert( xResult == CKR_OK );
     assert( xCertHandle != CK_INVALID_HANDLE );
 
-    LogInfo( ( "FreeRTOS_P11_Certificate.dat has been created in the Visual Studio" \
-                    " Solution directory\r\n" ) );
+    LogInfo( ( "FreeRTOS_P11_Certificate.dat has been created in the current " \
+                    " directory" ) );
 
-    PKCS11_FREE( pucDerObject );
+    free( pucDerObject );
     vEnd( hSession, pxSlotId );
-    LogInfo( ( "Finished Importing RSA Certificate.\r\n" ) );
-    LogInfo( ( "---------Finished Importing Objects---------\r\n" ) );
+    LogInfo( ( "Finished Importing RSA Certificate." ) );
+    LogInfo( ( "---------Finished Importing Objects---------" ) );
 }
 
 static void prvObjectGeneration( void )
 {
-    LogInfo( ( "---------Generating Objects---------\r\n" ) );
+    LogInfo( ( "---------Generating Objects---------" ) );
 
     /* Helper variables. */
     CK_RV xResult = CKR_OK;
@@ -354,9 +364,9 @@ static void prvObjectGeneration( void )
     xResult = C_GetFunctionList( &pxFunctionList );
     assert( xResult == CKR_OK );
 
-    LogInfo( ( "Creating private key with label: %s \r\n",
+    LogInfo( ( "Creating private key with label: %s ",
                     pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS ) );
-    LogInfo( ( "Creating public key with label: %s \r\n",
+    LogInfo( ( "Creating public key with label: %s ",
                     pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS ) );
 
     /* This function will generate a new EC private and public key pair. You can
@@ -372,9 +382,9 @@ static void prvObjectGeneration( void )
                                                  &xPublicKeyHandle,
                                                  &xPrivateKeyHandle );
     assert( xResult == CKR_OK );
-    LogInfo( ( "FreeRTOS_P11_Key.dat has been created in the Visual Studio" \
-                    " Solution directory\r\n" ) );
-    LogInfo( ( "Extracting public key bytes...\r\n" ) );
+    LogInfo( ( "FreeRTOS_P11_Key.dat has been created in the " \
+                    "current directory" ) );
+    LogInfo( ( "Extracting public key bytes..." ) );
 
     /* Export public key as hex bytes and print the hex representation of the
      * public key. */

@@ -22,12 +22,24 @@
  * http://aws.amazon.com/freertos
  * http://www.FreeRTOS.org
  */
+
 /* Standard includes. */
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
+/* Logging configuration for the PKCS #11 library. */
+#ifndef LIBRARY_LOG_NAME
+    #define LIBRARY_LOG_NAME    "PKCS11_DEMO"
+#endif
+
+#ifndef LIBRARY_LOG_LEVEL
+    #define LIBRARY_LOG_LEVEL    LOG_INFO
+#endif
+
+#include "logging_stack.h"
+
 /* PKCS #11 includes. */
-#include "core_pkcs11_config.h"
 #include "core_pkcs11.h"
 #include "pkcs11.h"
 
@@ -50,7 +62,7 @@ void vPKCS11ManagementAndRNGDemo( void )
      * reference to the Cryptographic Token Interface defined in the PKCS #11 
      * standard. An implementation of Cryptoki is referred to as a 
      * "Cryptoki library". */
-    LogInfo( ( "\r\nStarting PKCS #11 Management and Random Number Generation" \
+    LogInfo( ( "Starting PKCS #11 Management and Random Number Generation" \
                 " Demo." ) );
 
     /* CK_RV is the return type for a Cryptoki function. Generally the underlying
@@ -107,7 +119,7 @@ void vPKCS11ManagementAndRNGDemo( void )
     assert( pxFunctionList->C_CloseSession != NULL );
     assert( pxFunctionList->C_Finalize != NULL );
 
-    LogInfo( ( "Cryptoki Major Version: %lu Minor Version %lu", 
+    LogInfo( ( "Cryptoki Major Version: %u Minor Version %u", 
                     pxFunctionList->version.major, 
                     pxFunctionList->version.minor ) );
 
@@ -131,7 +143,7 @@ void vPKCS11ManagementAndRNGDemo( void )
     /* Since C_GetSlotList does not allocate the memory itself for getting a list 
      * of CK_SLOT_ID, we allocate one for it to populate with the list of 
      * slot ids. */
-    pxSlotId = PKCS11_MALLOC( sizeof( CK_SLOT_ID ) * ( xSlotCount ) );
+    pxSlotId = malloc( sizeof( CK_SLOT_ID ) * ( xSlotCount ) );
     assert( pxSlotId != NULL );
 
     /* Now since pSlotList is not NULL, C_GetSlotList will populate it with the 
@@ -170,8 +182,8 @@ void vPKCS11ManagementAndRNGDemo( void )
      */
     xResult = pxFunctionList->C_Login( hSession,
                                        CKU_USER,
-                                       ( CK_UTF8CHAR_PTR ) configPKCS11_DEFAULT_USER_PIN,
-                                       sizeof( configPKCS11_DEFAULT_USER_PIN ) - 1UL );
+                                       ( CK_UTF8CHAR_PTR ) "0000",
+                                       sizeof( "0000" ) - 1UL );
     assert( xResult == CKR_OK );
 
     /* C_GenerateRandom generates random or pseudo random data. As arguments it
@@ -209,7 +221,7 @@ void vPKCS11ManagementAndRNGDemo( void )
     LogInfo( ( "Finished PKCS #11 Management and Random Number Generation" \
                 " Demo." ) );
 
-    PKCS11_FREE( pxSlotId );
+    free( pxSlotId );
 }
 
 /**
