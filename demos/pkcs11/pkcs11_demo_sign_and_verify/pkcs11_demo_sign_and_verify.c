@@ -22,22 +22,9 @@
  * http://aws.amazon.com/freertos
  * http://www.FreeRTOS.org
  */
-/* Standard include. */
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-
+/* Logging stack includes. */
 #include "logging_levels.h"
 
-#define LIBRARY_LOG_LEVEL    LOG_INFO
-
-/* PKCS #11 includes. */
-#include "core_pkcs11_config.h"
-#include "core_pkcs11.h"
-#include "pkcs11.h"
-#include "core_pki_utils.h"
-
-/* Logging configuration for the PKCS #11 library. */
 #ifndef LIBRARY_LOG_NAME
     #define LIBRARY_LOG_NAME    "PKCS11_DEMO"
 #endif
@@ -48,11 +35,22 @@
 
 #include "logging_stack.h"
 
+/* Standard include. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
+
+/* PKCS #11 includes. */
+#include "core_pkcs11.h"
+#include "pkcs11.h"
+#include "core_pki_utils.h"
+
 /* Demo includes. */
 #include "demo_helpers.h"
 
 /**
- * This function details how to use the PKCS #11 "Sign and Verify" functions to 
+ * @brief This function details how to use the PKCS #11 "Sign and Verify" functions to 
  * create and interact with digital signatures.
  * The functions described are all defined in 
  * http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html 
@@ -164,7 +162,7 @@ void vPKCS11SignVerifyDemo( void )
      * "objects.c" demo.
      */
     xResult = xFindObjectWithLabelAndClass( hSession, 
-            pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS, 
+            pkcs11demoPRIVATE_KEY_LABEL, 
             CKO_PRIVATE_KEY,
             &xPrivateKeyHandle );
     assert( xResult == CKR_OK );
@@ -173,7 +171,7 @@ void vPKCS11SignVerifyDemo( void )
     /* Acquire the object handle for the public key created in the "objects.c" 
      * demo. */
     xResult = xFindObjectWithLabelAndClass( hSession, 
-            pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS, 
+            pkcs11demoPUBLIC_KEY_LABEL, 
             CKO_PRIVATE_KEY,
             &xPublicKeyHandle );
     assert( xResult == CKR_OK );

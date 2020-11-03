@@ -28,6 +28,11 @@
 #include "core_pkcs11.h"
 #include "mbedtls/pk.h"
 
+#define pkcs11demoCERT_LABEL              "Device Cert"
+#define pkcs11demoPRIVATE_KEY_LABEL       "Device Priv TLS Key"
+#define pkcs11demoPUBLIC_KEY_LABEL        "Device Pub TLS Key"
+
+
 /* This function contains standard setup code for PKCS #11. See the
  * "management_and_rng.c" file for the demo code explaining this section
  * of cryptoki.

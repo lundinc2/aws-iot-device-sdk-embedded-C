@@ -27,6 +27,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+
+#include "logging_levels.h"
 
 /* Logging configuration for the PKCS #11 library. */
 #ifndef LIBRARY_LOG_NAME
@@ -37,8 +40,9 @@
     #define LIBRARY_LOG_LEVEL    LOG_INFO
 #endif
 
+#include "logging_stack.h"
+
 /* PKCS #11 includes. */
-#include "core_pkcs11_config.h"
 #include "core_pkcs11.h"
 #include "pkcs11.h"
 
@@ -182,7 +186,7 @@ static void prvObjectImporting( void )
     /* The label will help the application identify which object it would like 
      * to access.
      */
-    CK_BYTE pucLabel[] = pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS;
+    CK_BYTE pucLabel[] = pkcs11demoCERT_LABEL;
 
     /* Specify certificate class. */
     xCertificateTemplate.xObjectClass.type = CKA_CLASS;
@@ -241,7 +245,7 @@ static void prvObjectImporting( void )
 
     /* Create an object using the encoded client certificate. */
     LogInfo( ( "Creating x509 certificate with label: %s ",
-                pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS ) );
+                pkcs11demoCERT_LABEL ) );
 
     /* Once the Cryptoki library has finished importing the new x509 certificate
      * a CK_OBJECT_HANDLE is associated with it. The application can now use this
@@ -321,8 +325,8 @@ static void prvObjectGeneration( void )
 
     /* Labels are application defined strings that are used to identify an
      * object. It should not be NULL terminated. */
-    CK_BYTE pucPublicKeyLabel[] = { pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS };
-    CK_BYTE pucPrivateKeyLabel[] = { pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS };
+    CK_BYTE pucPublicKeyLabel[] = { pkcs11demoPRIVATE_KEY_LABEL };
+    CK_BYTE pucPrivateKeyLabel[] = { pkcs11demoPUBLIC_KEY_LABEL };
 
     /* CK_ATTTRIBUTE's contain an attribute type, a value, and the length of
      * the value. An array of CK_ATTRIBUTEs is called a template. They are used
@@ -365,9 +369,9 @@ static void prvObjectGeneration( void )
     assert( xResult == CKR_OK );
 
     LogInfo( ( "Creating private key with label: %s ",
-                    pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS ) );
+                    pkcs11demoPRIVATE_KEY_LABEL ) );
     LogInfo( ( "Creating public key with label: %s ",
-                    pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS ) );
+                    pkcs11demoPUBLIC_KEY_LABEL ) );
 
     /* This function will generate a new EC private and public key pair. You can
      * use " $openssl ec -inform der -in FreeRTOS_P11_Key.dat -text " to see
