@@ -35,7 +35,6 @@ target_compile_definitions(
         -DMBEDTLS_CONFIG_FILE="mbedtls_config.h"
 )
 
-
 target_include_directories(
     ${DEMO_NAME}
     PUBLIC

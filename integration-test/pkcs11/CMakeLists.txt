@@ -1,4 +1,5 @@
 project ("pkcs11 system test")
+cmake_minimum_required (VERSION 3.2.0)
 
 # Include PKCS #11 library's source and header path variables.
 include("${CMAKE_SOURCE_DIR}/libraries/standard/corePKCS11/pkcsFilePaths.cmake")

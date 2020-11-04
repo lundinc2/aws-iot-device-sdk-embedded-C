@@ -39,6 +39,7 @@
 /* C runtime includes. */
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /**
  * @ingroup pkcs11_macros
@@ -103,7 +104,7 @@ static CK_RV prvFileExists( const char * pcFileName )
  *
  */
 static void prvLabelToFilenameHandle( const char * pcLabel,
-                                char ** pcFileName,
+                                const char ** pcFileName,
                                CK_OBJECT_HANDLE_PTR pHandle )
 {
     if( ( pcLabel != NULL ) && ( pHandle != NULL ) && ( pcFileName != NULL ) )
@@ -162,7 +163,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
 {
     FILE * pxFile = NULL;
     size_t ulBytesWritten;
-    char * pcFileName = NULL;
+    const char * pcFileName = NULL;
     CK_OBJECT_HANDLE xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
 
     if( ( pxLabel != NULL ) && ( pucData != NULL ) )
@@ -223,7 +224,7 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
 CK_OBJECT_HANDLE PKCS11_PAL_FindObject( CK_BYTE_PTR pxLabel,
                                         CK_ULONG usLength )
 {
-    char * pcFileName = NULL;
+    const char * pcFileName = NULL;
     CK_OBJECT_HANDLE xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
     ( void ) usLength;
 
@@ -253,7 +254,7 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
 {
     CK_RV xReturn = CKR_OK;
     FILE * pxFile = NULL;
-    size_t ulSize = 0;
+    size_t lSize = 0;
     const char * pcFileName = NULL;
 
 
@@ -306,13 +307,13 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
         else
         {
             ( void ) fseek( pxFile, 0, SEEK_END );
-            ulSize = ( uint32_t ) ftell( pxFile );
+            lSize = ftell( pxFile );
             ( void ) fseek( pxFile, 0, SEEK_SET );
 
-            if( ulSize > 0UL )
+            if( lSize > 0UL )
             {
-                *pulDataSize = ulSize;
-                *ppucData = PKCS11_MALLOC( *pulDataSize );
+                *pulDataSize = lSize;
+                *ppucData = malloc( *pulDataSize );
                 if( NULL == *ppucData )
                 {
                     LogError( ( "Could not get object value. Malloc failed to allocate memory." ) );
@@ -328,13 +329,13 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
 
         if( CKR_OK == xReturn )
         {
-            ulSize = 0;
-            ulSize = fread( *ppucData, sizeof( uint8_t ), *pulDataSize, pxFile );
+            lSize = 0;
+            lSize = fread( *ppucData, sizeof( uint8_t ), *pulDataSize, pxFile );
 
-            if( ulSize != *pulDataSize )
+            if( lSize != *pulDataSize )
             {
                 LogError( ( "PKCS #11 PAL Failed to get object value. Expected to read %ld "
-                            "from %s but received %ld", *pulDataSize, pcFileName, ulSize ) );
+                            "from %s but received %ld", *pulDataSize, pcFileName, lSize ) );
                 xReturn = CKR_FUNCTION_FAILED;
             }
         }
