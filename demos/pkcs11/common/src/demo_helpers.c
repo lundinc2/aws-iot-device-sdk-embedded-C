@@ -23,6 +23,10 @@
  * http://www.FreeRTOS.org
  */
 
+/**
+ * @file demo_helpers.c
+ * @brief Common functions used between the PKCS #11 demos.
+ */
 /* Standard includes. */
 #include <stdio.h>
 #include <assert.h>
@@ -38,6 +42,13 @@
 
 /* Helpers include. */
 #include "demo_helpers.h"
+
+
+/* 
+ * @brief macro to help print public key hex to serial.
+ */
+#define BYTES_TO_DISPLAY_PER_ROW    16
+/*-----------------------------------------------------------*/
 
 void vStart( CK_SESSION_HANDLE * pxSession,
                CK_SLOT_ID ** ppxSlotId )
@@ -112,7 +123,6 @@ void vWriteHexBytesToConsole( char * pcDescription,
     /* This function is simply a helper function to print the raw hex values
      * of an EC public key. It's explanation is not within the scope of the demos
      * and is sparsely commented. */
-#define BYTES_TO_DISPLAY_PER_ROW    16
     char pcByteRow[ 1 + ( BYTES_TO_DISPLAY_PER_ROW * 2 ) + ( BYTES_TO_DISPLAY_PER_ROW / 2 ) ];
     char * pcNextChar = pcByteRow;
     uint32_t ulIndex = 0;
@@ -157,7 +167,6 @@ void vWriteHexBytesToConsole( char * pcDescription,
 }
 /*-----------------------------------------------------------*/
 
-/* Extract ECDSA public key. */  
 CK_RV vExportPublicKey( CK_SESSION_HANDLE xSession,
                         CK_OBJECT_HANDLE xPublicKeyHandle,
                         CK_BYTE ** ppucDerPublicKey,

@@ -59,6 +59,12 @@
 #define EXPONENT_1_LENGTH     128
 #define EXPONENT_2_LENGTH     128
 #define COEFFICIENT_LENGTH    128
+#define PUB_EXP_LENGTH              3
+
+#define CERTIFICATE_VALUE_LENGTH    949
+#define pkcstestRAND_BUFFER_SIZE    10 
+#define EC_PARAMS_LENGTH    10
+#define EC_D_LENGTH         32
 
 
 typedef struct RsaParams_t
@@ -537,7 +543,6 @@ void test_GenerateRandom( void )
     uint32_t xDifferentSessions = 0;
     int i;
 
-#define pkcstestRAND_BUFFER_SIZE    10 /* This number is not actually flexible anymore because of the print formatting. */
     CK_BYTE xBuf1[ pkcstestRAND_BUFFER_SIZE ];
     CK_BYTE xBuf2[ pkcstestRAND_BUFFER_SIZE ];
     CK_BYTE xBuf3[ pkcstestRAND_BUFFER_SIZE ];
@@ -711,9 +716,6 @@ void test_FindObject_RSA( void )
 
 void test_GetAttributeValue_RSA( void )
 {
-#define MODULUS_LENGTH              256
-#define PUB_EXP_LENGTH              3
-#define CERTIFICATE_VALUE_LENGTH    949
     CK_RV xResult;
     CK_ATTRIBUTE xTemplate;
     CK_OBJECT_HANDLE xCertificateHandle = CK_INVALID_HANDLE;
@@ -1511,9 +1513,6 @@ static CK_RV prvProvisionPrivateECKey( CK_SESSION_HANDLE xSession,
     mbedtls_ecp_keypair * pxKeyPair = ( mbedtls_ecp_keypair * ) pxMbedPkContext->pk_ctx;
 
     xResult = C_GetFunctionList( &pxFunctionList );
-
-#define EC_PARAMS_LENGTH    10
-#define EC_D_LENGTH         32
 
     pxD = PKCS11_MALLOC( EC_D_LENGTH );
 

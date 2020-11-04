@@ -1,5 +1,4 @@
 project ("pkcs11 system test")
-cmake_minimum_required (VERSION 3.2.0)
 
 # Include PKCS #11 library's source and header path variables.
 include("${CMAKE_SOURCE_DIR}/libraries/standard/corePKCS11/pkcsFilePaths.cmake")
@@ -15,11 +14,11 @@ set(corePKCS11_location "${CMAKE_SOURCE_DIR}/libraries/standard/corePKCS11")
 set(3rdparty_location "${corePKCS11_location}/3rdparty")
 set(test_config "test-config")
 
-message("${PKCS_INCLUDE_PUBLIC_DIRS}")
-file(GLOB sources CONFIGURE_DEPENDS "${3rdparty_location}/mbedtls/library/*.c")
+file(GLOB MBEDTLS_FILES CONFIGURE_DEPENDS "${3rdparty_location}/mbedtls/library/*.c")
+file(GLOB MBEDTLS_FILES_INCLUDES CONFIGURE_DEPENDS "${3rdparty_location}/mbedtls/include/mbedtls/*.h")
 file(GLOB test_config_sources CONFIGURE_DEPENDS "${test_config}/*.h")
 list(APPEND real_source_files
-            ${sources}
+            ${MBEDTLS_FILES}
             ${test_config_sources}
             "${CMAKE_SOURCE_DIR}/platform/posix/pkcs11_pal.c"
             "${3rdparty_location}/mbedtls_utils/mbedtls_utils.c"
@@ -60,6 +59,17 @@ target_compile_definitions(
         -DMBEDTLS_CONFIG_FILE="mbedtls_config.h"
 )
 
+set_source_files_properties(
+    ${MBEDTLS_FILES}
+    PROPERTIES COMPILE_FLAGS
+    "-Wno-pedantic"
+)
+
+set_source_files_properties(
+    ${MBEDTLS_FILES_INCLUDES}
+    PROPERTIES COMPILE_FLAGS
+    "-Wno-pedantic"
+)
 
 list(APPEND stest_link_list
             lib${real_name}.a

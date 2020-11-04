@@ -44,7 +44,7 @@
 #include "pkcs11.h"
 
 /**
- * This function details how to use the PKCS #11 "Management" functions to 
+ *@brief This function details how to use the PKCS #11 "Management" functions to 
  * manage the internal state machine of the PKCS #11 implementation. These
  * functions are all defined in 
  * http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html 

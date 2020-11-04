@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-/* Logging configuration for the PKCS #11 library. */
+/* Logging configuration for the PKCS #11 Demo. */
 #ifndef LIBRARY_LOG_NAME
     #define LIBRARY_LOG_NAME    "PKCS11_DEMO"
 #endif
@@ -47,7 +47,7 @@
 #include "demo_helpers.h"
 
 /**
- * This function details what Cryptoki mechanisms are, how to query a slot's
+ * @brief This function details what Cryptoki mechanisms are, how to query a slot's
  * support for them, and how to use those mechanisms to generate a hash of a buffer.
  * This can then be used as a message digest.
  *

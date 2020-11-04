@@ -8,6 +8,12 @@ set(3RDPARTY_LOCATION "${COREPKCS11_LOCATION}/3rdparty")
 include( ${COREPKCS11_LOCATION}/pkcsFilePaths.cmake )
 
 file(GLOB MBEDTLS_FILES CONFIGURE_DEPENDS "${3RDPARTY_LOCATION}/mbedtls/library/*.c")
+set_source_files_properties(
+    ${MBEDTLS_FILES}
+    PROPERTIES COMPILE_FLAGS
+    "-Wno-pedantic"
+)
+
 list(APPEND PKCS_SOURCES
             "${MBEDTLS_FILES}"
             "${CMAKE_SOURCE_DIR}/platform/posix/pkcs11_pal.c"

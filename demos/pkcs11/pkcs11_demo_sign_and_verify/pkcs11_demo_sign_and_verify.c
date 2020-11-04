@@ -22,6 +22,12 @@
  * http://aws.amazon.com/freertos
  * http://www.FreeRTOS.org
  */
+
+/* Standard include. */
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
 /* Logging stack includes. */
 #include "logging_levels.h"
 
@@ -34,12 +40,6 @@
 #endif
 
 #include "logging_stack.h"
-
-/* Standard include. */
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-
 
 /* PKCS #11 includes. */
 #include "core_pkcs11.h"

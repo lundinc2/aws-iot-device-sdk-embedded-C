@@ -24,15 +24,15 @@
  */
 
 /**
- * @file pkcs11_pal.c
+ * @file core_pkcs11_pal.c
  * @brief Linux file save and read implementation
  * for PKCS #11 based on mbedTLS with for software keys. This
  * file deviates from the FreeRTOS style standard for some function names and
  * data types in order to maintain compliance with the PKCS #11 standard.
  */
-
 /*-----------------------------------------------------------*/
 
+/* PKCS 11 includes. */
 #include "core_pkcs11_config.h"
 #include "core_pkcs11.h"
 
@@ -74,7 +74,7 @@ enum eObjectHandles
  */
 static CK_RV prvFileExists( const char * pcFileName )
 {
-    FILE * pxFile;
+    FILE * pxFile = NULL;
     CK_RV xReturn = CKR_OK;
 
     /* fopen returns NULL if the file does not exist. */
@@ -83,10 +83,12 @@ static CK_RV prvFileExists( const char * pcFileName )
     if( pxFile == NULL )
     {
         xReturn = CKR_OBJECT_HANDLE_INVALID;
+        LogError( ( "Could not open %s for reading.", pcFileName ) );
     }
     else
     {
         ( void ) fclose( pxFile );
+        LogDebug( ( "Found file %s and was able to open it for reading.", pcFileName ) );
     }
 
     return xReturn;
@@ -100,36 +102,35 @@ static CK_RV prvFileExists( const char * pcFileName )
  * @param[out] pHandle           The type of the PKCS #11 object.
  *
  */
-static void prvLabelToFilenameHandle( CK_BYTE_PTR pcLabel,
+static void prvLabelToFilenameHandle( const char * pcLabel,
                                 char ** pcFileName,
                                CK_OBJECT_HANDLE_PTR pHandle )
 {
-    if( pcLabel != NULL )
+    if( ( pcLabel != NULL ) && ( pHandle != NULL ) && ( pcFileName != NULL ) )
     {
-        /* Translate from the PKCS#11 label to local storage file name. */
-        if( 0 == strncmp( pcLabel,
-                         pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS,
+        if( 0 == strncmp( pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS,
+                         pcLabel,
                          sizeof( pkcs11configLABEL_DEVICE_CERTIFICATE_FOR_TLS ) ) )
         {
             *pcFileName = pkcs11palFILE_NAME_CLIENT_CERTIFICATE;
             *pHandle = ( CK_OBJECT_HANDLE ) eAwsDeviceCertificate;
         }
-        else if( 0 == strncmp( pcLabel,
-                              pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS,
+        else if( 0 == strncmp( pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS,
+                              pcLabel,
                               sizeof( pkcs11configLABEL_DEVICE_PRIVATE_KEY_FOR_TLS ) ) )
         {
             *pcFileName = pkcs11palFILE_NAME_KEY;
             *pHandle = ( CK_OBJECT_HANDLE ) eAwsDevicePrivateKey;
         }
-        else if( 0 == strncmp( pcLabel,
-                              pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS,
+        else if( 0 == strncmp( pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS,
+                              pcLabel,
                               sizeof( pkcs11configLABEL_DEVICE_PUBLIC_KEY_FOR_TLS ) ) )
         {
             *pcFileName = pkcs11palFILE_NAME_KEY;
             *pHandle = ( CK_OBJECT_HANDLE ) eAwsDevicePublicKey;
         }
-        else if( 0 == strncmp( pcLabel,
-                              pkcs11configLABEL_CODE_VERIFICATION_KEY,
+        else if( 0 == strncmp( pkcs11configLABEL_CODE_VERIFICATION_KEY,
+                              pcLabel,
                               sizeof( pkcs11configLABEL_CODE_VERIFICATION_KEY ) ) )
         {
             *pcFileName = pkcs11palFILE_CODE_SIGN_PUBLIC_KEY;
@@ -140,6 +141,11 @@ static void prvLabelToFilenameHandle( CK_BYTE_PTR pcLabel,
             *pcFileName = NULL;
             *pHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
         }
+        LogDebug( ( "Converted %s to %s", pcLabel, *pcFileName ) );
+    }
+    else
+    {
+        LogError( ( "Could not convert label to filename. Received a NULL parameter." ) );
     }
 }
 
@@ -154,15 +160,22 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
                                         CK_BYTE_PTR pucData,
                                         CK_ULONG ulDataSize )
 {
-    FILE * pxFile;
+    FILE * pxFile = NULL;
     size_t ulBytesWritten;
     char * pcFileName = NULL;
     CK_OBJECT_HANDLE xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
 
-    /* Converts a label to its respective filename and handle. */
-    prvLabelToFilenameHandle( pxLabel->pValue,
-                              &pcFileName,
-                              &xHandle );
+    if( ( pxLabel != NULL ) && ( pucData != NULL ) )
+    {
+        /* Converts a label to its respective filename and handle. */
+        prvLabelToFilenameHandle( pxLabel->pValue,
+                                  &pcFileName,
+                                  &xHandle );
+    }
+    else
+    {
+        LogError( ( "Could not save object. Received invalid parameters." ) );
+    }
 
     if( pcFileName != NULL )
     {
@@ -185,12 +198,20 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
                             "Expected to write %lu bytes, but wrote %lu bytes.", ulDataSize, ulBytesWritten ) );
                 xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
             }
+            else
+            {
+                LogDebug ( ( "Successfully wrote %lu to %s", ulBytesWritten, pcFileName ) );
+            }
         }
 
         if( NULL != pxFile )
         {
             ( void ) fclose( pxFile );
         }
+    }
+    else
+    {
+        LogError( ( "Could not save object. Unable to find the correct file." ) );
     }
 
     return xHandle;
@@ -202,18 +223,23 @@ CK_OBJECT_HANDLE PKCS11_PAL_SaveObject( CK_ATTRIBUTE_PTR pxLabel,
 CK_OBJECT_HANDLE PKCS11_PAL_FindObject( CK_BYTE_PTR pxLabel,
                                         CK_ULONG usLength )
 {
+    char * pcFileName = NULL;
+    CK_OBJECT_HANDLE xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
     ( void ) usLength;
 
-    CK_OBJECT_HANDLE xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
-    char * pcFileName = NULL;
-
-    prvLabelToFilenameHandle( pxLabel,
-                              &pcFileName,
-                              &xHandle );
-
-    if( CKR_OK != prvFileExists( pcFileName ) )
+    if( pxLabel != NULL )
     {
-        xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
+        prvLabelToFilenameHandle( ( const char * ) pxLabel,
+                                  &pcFileName,
+                                  &xHandle );
+        if( CKR_OK != prvFileExists( pcFileName ) )
+        {
+            xHandle = ( CK_OBJECT_HANDLE ) eInvalidHandle;
+        }
+    }
+    else
+    {
+        LogError( ( "Could not find object. Received a NULL label." ) );
     }
 
     return xHandle;
@@ -226,7 +252,7 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
                                  CK_BBOOL * pIsPrivate )
 {
     CK_RV xReturn = CKR_OK;
-    FILE * pxFile;
+    FILE * pxFile = NULL;
     size_t ulSize = 0;
     const char * pcFileName = NULL;
 
@@ -261,7 +287,13 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
         xReturn = CKR_KEY_HANDLE_INVALID;
     }
 
-    if( pcFileName != NULL )
+    if( ( ppucData == NULL ) ||  ( pulDataSize == NULL ) || ( pIsPrivate == NULL ) )
+    {
+        xReturn = CKR_ARGUMENTS_BAD;
+        LogError( ( "Could not get object value. Received a NULL argument." ) );
+    }
+
+    if( xReturn == CKR_OK )
     {
         pxFile = fopen( pcFileName, "r" );
 
@@ -283,11 +315,13 @@ CK_RV PKCS11_PAL_GetObjectValue( CK_OBJECT_HANDLE xHandle,
                 *ppucData = PKCS11_MALLOC( *pulDataSize );
                 if( NULL == *ppucData )
                 {
+                    LogError( ( "Could not get object value. Malloc failed to allocate memory." ) );
                     xReturn = CKR_HOST_MEMORY;
                 }
             }
             else
             {
+                LogError( ( "Could not get object value. Failed to determine object size." ) );
                 xReturn = CKR_FUNCTION_FAILED;
             }
         }
