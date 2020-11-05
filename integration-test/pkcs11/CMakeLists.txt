@@ -21,7 +21,7 @@ file(GLOB test_config_sources CONFIGURE_DEPENDS "${test_config}/*.h")
 list(APPEND real_source_files
             ${MBEDTLS_FILES}
             ${test_config_sources}
-            "${CMAKE_SOURCE_DIR}/platform/posix/pkcs11_pal.c"
+            "${corePKCS11_location}/source/portable/posix/core_pkcs11_pal.c"
             "${3rdparty_location}/mbedtls_utils/mbedtls_utils.c"
             )
 

@@ -16,7 +16,7 @@ set_source_files_properties(
 
 list(APPEND PKCS_SOURCES
             "${MBEDTLS_FILES}"
-            "${CMAKE_SOURCE_DIR}/platform/posix/pkcs11_pal.c"
+            "${COREPKCS11_LOCATION}/source/portable/posix/core_pkcs11_pal.c"
             "${3RDPARTY_LOCATION}/mbedtls_utils/mbedtls_utils.c"
             "${3RDPARTY_LOCATION}/mbedtls_utils/mbedtls_error.c"
             )
